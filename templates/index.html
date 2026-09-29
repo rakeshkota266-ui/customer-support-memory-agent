@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Support Memory Agent</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f4f6f8;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            width: 700px;
+            max-width: 90%;
+            margin: 50px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #222;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 25px;
+        }
+
+        input, textarea {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-top: 8px;
+            margin-bottom: 18px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-size: 15px;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 8px;
+            background: #0078d4;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #005fa3;
+        }
+
+        .result {
+            margin-top: 25px;
+        }
+
+        .memory {
+            background: #eef6ff;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            border-left: 4px solid #0078d4;
+        }
+
+        .response {
+            background: #eefbea;
+            padding: 15px;
+            margin-top: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <h1>Customer Support Memory Agent</h1>
+
+    <p class="subtitle">
+        An AI support agent that remembers previous customer issues.
+    </p>
+
+    <label>Customer Name</label>
+    <input id="customerName" type="text" placeholder="Example: Rakesh">
+
+    <label>Support Message</label>
+    <textarea id="message" placeholder="Describe your issue..."></textarea>
+
+    <button onclick="sendMessage()">Send to Support Agent</button>
+
+    <div class="result" id="result"></div>
+
+</div>
+
+<script>
+ async function sendMessage() {
+
+    const customerName = document.getElementById("customerName").value;
+    const message = document.getElementById("message").value;
+    const result = document.getElementById("result");
+
+    if (!customerName || !message) {
+        result.innerHTML =
+            "<p class='error'>Please enter customer name and message.</p>";
+        return;
+    }
+
+    result.innerHTML =
+        "<p>Remembering customer history and generating AI response...</p>";
+
+    try {
+
+        const response = await fetch("/chat", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                customer_name: customerName,
+                message: message
+            })
+        });
+
+        const data = await response.json();
+
+        let html = `
+            <h3>Customer: ${data.customer}</h3>
+            <p><strong>Current message:</strong> ${data.message}</p>
+        `;
+
+        if (data.recalled_memories.length > 0) {
+
+            html += `<h3>🧠 Memory Used</h3>`;
+
+            data.recalled_memories.forEach(memory => {
+                html += `<div class="memory">${memory}</div>`;
+            });
+        }
+
+        html += `
+            <h3>🤖 AI Support Response</h3>
+            <div class="response">
+                ${data.ai_response}
+        `;
+
+        if (data.image && data.image.url) {
+    html += `
+        <div style="margin-top:15px;">
+            <strong>🖼️ Related Image</strong><br>
+
+<img src="${data.image.url}"
+                 alt="Relevant support image"
+                 style="width:180px;height:120px;object-fit:cover;border-radius:10px;margin-top:8px;">
+
+            <br>
+
+            <a href="${data.image.source_url}"
+               target="_blank"
+               style="display:inline-block;margin-top:8px;">
+               🔗 View  source
+            </a>
+        </div>
+    `;
+}
+
+        html += `</div>`;
+
+        result.innerHTML = html;
+
+    } catch (error) {
+
+        console.error(error);
+
+        result.innerHTML =
+            "<p class='error'>Could not connect to the support agent.</p>";
+    }
+}
+</script>
+
+</body>
+</html>
